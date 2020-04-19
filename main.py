@@ -2,6 +2,7 @@
 
 import re
 import os
+import sys
 import argparse
 import requests
 from Crypto.Cipher import AES
@@ -11,7 +12,8 @@ def get_args():
 	parser = argparse.ArgumentParser(description="A m3u8 Downloader.")
 	parser.add_argument("url", help="The URL to the m3u8.")
 	parser.add_argument("name", help="The video's name.")
-	parser.add_argument("-n", default=10, help="The number of threads used to download ts files.")
+	parser.add_argument("-o", action="store_true", help="Overwrite existing files without prompt.")
+	parser.add_argument("-n", type=int, default=10, help="The number of threads used to download ts files.")
 	parser.add_argument("-s", action="store_true", help="Don't delete ts files.")
 	return parser.parse_args()
 
@@ -39,8 +41,8 @@ def main():
 	pool = Pool(args.n)
 
 	# 创建输出目录
-	output_dir = os.path.abspath(args.name)
-	if os.path.isdir(output_dir):
+	output_dir = os.path.abspath(f"{sys.path[0]}/output/{args.name}")
+	if os.path.isdir(output_dir) and not args.o:
 		while True:
 			overwrite = input(f"输出目录{output_dir}已存在, 是否要覆盖? [y/N] ")
 			if overwrite == "Y" or overwrite == "y":
@@ -51,7 +53,7 @@ def main():
 			else:
 				continue
 	else:
-		os.makedirs(output_dir)
+		os.makedirs(output_dir, exist_ok=True)
 
 	# 下载m3u8文件
 	index_fname = f"{output_dir}/{args.name}.m3u8"
@@ -83,7 +85,7 @@ def main():
 	# 合并ts文件
 	ts_files = [fname for fname in os.listdir(output_dir) if re.match(f"^{ts_prefix}\d+\.ts$", fname)]
 	ts_index = lambda fname: int(re.findall(f"{ts_prefix}(\d+)\.ts", fname)[0])
-	ts_merged_fname = f"{output_dir}/{args.name}.ts"
+	ts_merged_fname = f"{output_dir}/../{args.name}.ts"
 	with open(ts_merged_fname, 'wb') as ofile:
 		for fname in sorted(ts_files, key=ts_index):
 			fname = f"{output_dir}/{fname}"
@@ -96,7 +98,6 @@ def main():
 					ofile.write(chunk)
 			if not args.s:
 				os.remove(fname)
-
 
 if __name__ == "__main__":
 	main()

@@ -18,11 +18,19 @@ def get_args():
 	return parser.parse_args()
 
 def get_ts(output_dir, ts_url, key, iv):
-	print(f"开始下载ts文件: {ts_url}")
+	print(f"开始下载ts文件: {ts_url}", end="\r")
 
 	# 下载ts文件
-	with requests.get(ts_url) as response:
-		data = response.content
+	retry = 0
+	while retry <= 3:
+		try:
+			with requests.get(ts_url, timeout=60) as response:
+				data = response.content
+			break
+		except requests.exceptions.RequestException as e:
+			retry += 1
+			print(e)
+			print("retry = {}, url = {}".format(retry, url))
 
 	# 解密ts文件
 	cipher = AES.new(key, AES.MODE_CBC, iv)
@@ -89,7 +97,7 @@ def main():
 	with open(ts_merged_fname, 'wb') as ofile:
 		for fname in sorted(ts_files, key=ts_index):
 			fname = f"{output_dir}/{fname}"
-			print(f"开始合并ts文件: {fname}")
+			print(f"开始合并ts文件: {fname}", end="\r")
 			with open(fname, 'rb') as ifile:
 				while True:
 					chunk = ifile.read(65536)

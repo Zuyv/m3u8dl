@@ -1,0 +1,4 @@
+{
+	"python.linting.pylintPath": ".env/bin/pylint",
+	"python.pythonPath": ".env/bin/python"
+}

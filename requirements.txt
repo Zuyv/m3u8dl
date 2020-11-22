@@ -1,0 +1,4 @@
+jedi==0.17.2
+pylint==2.6.0
+requests==2.22.0
+pycryptodome==3.9.9
